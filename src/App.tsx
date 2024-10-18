@@ -1,7 +1,7 @@
 import './App.css';
 
-import { addDoc, collection, DocumentData, onSnapshot } from 'firebase/firestore';
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { addDoc, collection, doc, DocumentData, onSnapshot, setDoc } from 'firebase/firestore';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 
 import { Dot } from './components/dot';
 import db from './firebase';
@@ -12,12 +12,14 @@ function App() {
 		name: '',
 		value: '',
 	};
+	const dialogRef = useRef<HTMLDialogElement | null>(null);
 	const [colors, setColors] = useState<colorsType>([]);
 	const [formState, setFormState] = useState<typeof initFormState>(initFormState);
+	const [editFormState, setEditFormState] = useState<{ name: string; value: string; id: string }>({ id: '', name: '', value: '' });
+
 	useEffect(
 		() =>
 			onSnapshot(collection(db, 'colors'), (snapshot) => {
-				// setColors(snapshot.docs.map(doc=> doc.data()))
 				let v: colorsType = snapshot.docs.map((doc) => ({ ...doc.data(), id: doc.id }));
 				setColors(v);
 			}),
@@ -28,16 +30,23 @@ function App() {
 		const { name, value } = e.target;
 		setFormState((prev) => ({ ...prev, [name]: value }));
 	};
+	const onInputEditChange = (e: ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = e.target;
+		setEditFormState((prev) => ({ ...prev, [name]: value }));
+	};
+
+	const onEditColorSubmit = async (e: FormEvent<HTMLFormElement>, id: string) => {
+		e.preventDefault();
+		const docRef = doc(db, 'colors', id);
+		const payload = { name: editFormState.name, value: editFormState.value };
+		await setDoc(docRef, payload);
+	};
 
 	const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		const collectionRef = collection(db, 'colors');
 		const payload = { name: formState.name, value: formState.value };
 		await addDoc(collectionRef, payload);
-	};
-
-	const onEdit = async (id: string) => {
-		id;
 	};
 
 	return (
@@ -65,12 +74,43 @@ function App() {
 				{colors.length > 0 &&
 					colors.map((color) => (
 						<li key={color.id}>
-							<a
-								href="/#"
-								onClick={() => onEdit(color.id)}>
+							<button
+								type="button"
+								onClick={() => {
+									dialogRef.current?.showModal();
+									setEditFormState({ name: color.name, value: color.value, id: color.id });
+									console.log(color.id);
+								}}>
 								edit
-							</a>
-							<Dot color={color.value} /> {color.name}
+							</button>
+							<Dot color={color.value} /> {color.name} {color.id}
+							<dialog ref={dialogRef}>
+								<form onSubmit={(e) => onEditColorSubmit(e, color.id)}>
+									<input
+										type="text"
+										name="name"
+										required
+										value={editFormState.name ?? ''}
+										onChange={onInputEditChange}
+									/>
+									<input
+										type="text"
+										name="value"
+										required
+										value={editFormState.value ?? ''}
+										onChange={onInputEditChange}
+									/>
+									<button type="submit">finalize</button>
+									<button
+										type="button"
+										onClick={() => {
+											dialogRef.current?.close();
+											setEditFormState({ id: '', name: '', value: '' });
+										}}>
+										close
+									</button>
+								</form>
+							</dialog>
 						</li>
 					))}
 

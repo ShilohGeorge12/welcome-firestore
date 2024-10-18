@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+<<<<<<< HEAD
+=======
+.env
+>>>>>>> 682dda8 (Initialize Firebase and Firestore setup)
