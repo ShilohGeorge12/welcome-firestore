@@ -16,6 +16,6 @@ form {
 	}
 }
 
-/* .button {
-	font-size: 40px;
-} */
+ul li button {
+	margin: 0px 10px;
+}

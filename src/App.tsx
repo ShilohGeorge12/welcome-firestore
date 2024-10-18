@@ -1,6 +1,6 @@
 import './App.css';
 
-import { addDoc, collection, doc, DocumentData, onSnapshot, setDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, DocumentData, onSnapshot, setDoc } from 'firebase/firestore';
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 
 import { Dot } from './components/dot';
@@ -47,6 +47,12 @@ function App() {
 		const collectionRef = collection(db, 'colors');
 		const payload = { name: formState.name, value: formState.value };
 		await addDoc(collectionRef, payload);
+		setFormState(initFormState);
+	};
+
+	const onDeleteColor = async (id: string) => {
+		const docRef = doc(db, 'colors', id);
+		await deleteDoc(docRef);
 	};
 
 	return (
@@ -79,11 +85,15 @@ function App() {
 								onClick={() => {
 									dialogRef.current?.showModal();
 									setEditFormState({ name: color.name, value: color.value, id: color.id });
-									console.log(color.id);
 								}}>
 								edit
 							</button>
-							<Dot color={color.value} /> {color.name} {color.id}
+							<button
+								type="button"
+								onClick={() => onDeleteColor(color.id)}>
+								Delete
+							</button>
+							<Dot color={color.value} /> {color.name}
 							<dialog ref={dialogRef}>
 								<form onSubmit={(e) => onEditColorSubmit(e, color.id)}>
 									<input
